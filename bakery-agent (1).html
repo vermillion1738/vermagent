@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bakery Agent — Abstract</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f0;
+    --muted: #666;
+    --dim: #333;
+    --green: #00e87a;
+    --green-bg: rgba(0,232,122,0.08);
+    --green-border: rgba(0,232,122,0.25);
+    --amber: #f5a623;
+    --amber-bg: rgba(245,166,35,0.08);
+    --red: #ff4444;
+    --red-bg: rgba(255,68,68,0.08);
+    --red-border: rgba(255,68,68,0.25);
+    --blue: #4da6ff;
+    --blue-bg: rgba(77,166,255,0.08);
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .logo span { color: var(--green); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  .card.full { grid-column: 1 / -1; }
+
+  .card-title {
+    font-family: var(--font-head);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .badge-ok { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .badge-err { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+  .badge-dim { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,166,35,0.25); }
+
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn:hover { background: var(--surface2); border-color: rgba(255,255,255,0.2); }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .btn-green {
+    background: var(--green);
+    color: #000;
+    border-color: var(--green);
+    font-weight: 500;
+  }
+  .btn-green:hover { background: #00cc6a; border-color: #00cc6a; }
+
+  .btn-red {
+    border-color: var(--red-border);
+    color: var(--red);
+  }
+  .btn-red:hover { background: var(--red-bg); }
+
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  .stat {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+  }
+
+  .stat-label { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+  .stat-value { font-family: var(--font-head); font-size: 22px; font-weight: 700; color: var(--text); }
+  .stat-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .input-row:last-child { border-bottom: none; }
+  .input-label { color: var(--muted); font-size: 12px; }
+
+  input[type="number"], input[type="text"] {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 5px 8px;
+    width: 110px;
+    text-align: right;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="number"]:focus, input[type="text"]:focus {
+    border-color: var(--green);
+  }
+
+  input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--green);
+    cursor: pointer;
+  }
+
+  .mult-big {
+    font-family: var(--font-head);
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+    margin: 0.5rem 0;
+  }
+
+  .mult-big.met { color: var(--green); }
+  .mult-big.unmet { color: var(--amber); }
+  .mult-big.unknown { color: var(--muted); }
+
+  .cond-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .cond-row:last-child { border-bottom: none; }
+
+  .bar-bg {
+    background: var(--surface2);
+    border-radius: 99px;
+    height: 3px;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .bar-fill {
+    height: 3px;
+    border-radius: 99px;
+    background: var(--green);
+    transition: width 0.3s;
+  }
+
+  .log-wrap {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .le {
+    padding: 2px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    display: flex;
+    gap: 10px;
+  }
+  .le:last-child { border-bottom: none; }
+  .le-ts { color: var(--dim); flex-shrink: 0; }
+  .le-ok .le-msg { color: var(--green); }
+  .le-warn .le-msg { color: var(--amber); }
+  .le-err .le-msg { color: var(--red); }
+  .le-skip .le-msg { color: var(--dim); }
+
+  .pill-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 0.5rem; }
+  .pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font-mono);
+  }
+  .pill:hover { border-color: var(--green); color: var(--green); }
+  .pill.active { background: var(--green); color: #000; border-color: var(--green); font-weight: 500; }
+
+  .agent-state {
+    text-align: center;
+    padding: 1.5rem 1rem;
+  }
+  .agent-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    display: inline-block;
+    margin-right: 6px;
+  }
+  .agent-dot.running { background: var(--green); animation: pulse 1.5s infinite; }
+  .agent-dot.paused { background: var(--amber); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .warn-box {
+    background: var(--amber-bg);
+    border: 1px solid rgba(245,166,35,0.2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 11px;
+    color: var(--amber);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .section-note {
+    font-size: 10px;
+    color: var(--dim);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  .tx-link {
+    color: var(--blue);
+    text-decoration: none;
+    font-size: 10px;
+  }
+  .tx-link:hover { text-decoration: underline; }
+
+  .rug-alert {
+    background: var(--red-bg);
+    border: 1px solid var(--red-border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .rug-alert.show { display: flex; }
+  .rug-alert-text { color: var(--red); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .main { grid-template-columns: 1fr; padding: 1rem; }
+    .card.full { grid-column: 1; }
+    .mult-big { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">bakery<span>.</span>agent</div>
+  <div class="header-right">
+    <span class="badge badge-dim" id="net-badge">Abstract · 2741</span>
+    <span class="badge badge-dim" id="w-badge">Not connected</span>
+    <button class="btn btn-sm" id="btn-connect">Connect AGW</button>
+    <button class="btn btn-sm btn-red" id="btn-disconnect" style="display:none">Disconnect</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="warn-box full" id="setup-warn">
+    <strong>Setup required before use:</strong><br>
+    1. Open this file in a browser that has the <strong>Abstract Global Wallet</strong> browser extension installed.<br>
+    2. Edit the <code>CONFIG</code> block at the bottom of this file and paste your contract addresses from <code>/agent.json</code>.<br>
+    3. Connect your wallet, set your target multiplier, and start the agent.
+  </div>
+
+  <div class="card">
+    <div class="card-title">Wallet</div>
+    <div id="w-disconnected">
+      <div style="color:var(--muted);font-size:12px;margin-bottom:.875rem">Connect your Abstract Global Wallet to enable baking.</div>
+      <button class="btn btn-green" id="btn-connect2">Connect AGW</button>
+    </div>
+    <div id="w-connected" style="display:none">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Address</div>
+      <div id="w-addr" style="font-size:12px;margin-bottom:1rem;word-break:break-all"></div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">ETH</div><div class="stat-value" id="w-eth">—</div></div>
+        <div class="stat"><div class="stat-label">Cookies</div><div class="stat-value" id="w-cookies">—</div></div>
+      </div>
+      <div class="stat-grid" style="margin-top:8px">
+        <div class="stat"><div class="stat-label">Season 7 score</div><div class="stat-value" id="w-score">—</div></div>
+        <div class="stat"><div class="stat-label">Bakery</div><div class="stat-value" id="w-bakery" style="font-size:13px">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      Live multiplier
+      <button class="btn btn-sm" id="btn-refresh">Refresh</button>
+    </div>
+    <div id="mult-display" class="mult-big unknown">—</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px" id="mult-sources">Connect and refresh to load sources</div>
+    <div style="margin-top:1rem">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Breakdown</div>
+      <div class="cond-row"><span style="color:var(--muted)">Base</span><span>1.0000×</span></div>
+      <div class="cond-row"><span style="color:var(--muted)">Perfectionist skill</span><span id="mb-perf">—</span></div>
+      <div class="cond-row"><span style="color:var(--muted)">Active boosts</span><span id="mb-boost">—</span></div>
+      <div class="cond-row"><span style="color:var(--muted)">Oven upgrade</span><span id="mb-oven">—</span></div>
+      <div class="cond-row"><span style="color:var(--muted)">Random event</span><span id="mb-event">—</span></div>
+      <div class="cond-row" style="border-top:1px solid var(--border2);margin-top:4px">
+        <span style="font-weight:500">Effective total</span>
+        <span style="color:var(--green);font-weight:500" id="mb-total">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Target multiplier</div>
+    <div class="input-row">
+      <span class="input-label">Bake only when live ≥</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input type="number" id="target-mult" min="1.00" max="3.00" step="0.01" value="1.04">
+        <span style="color:var(--muted)">×</span>
+      </div>
+    </div>
+    <div class="pill-row">
+      <span class="pill" data-v="1.00">1.00×</span>
+      <span class="pill active" data-v="1.04">1.04× Perf</span>
+      <span class="pill" data-v="1.10">1.10× Rush</span>
+      <span class="pill" data-v="1.20">1.20× Gold</span>
+      <span class="pill" data-v="1.35">1.35× Frenzy</span>
+      <span class="pill" data-v="1.44">1.44× stacked</span>
+    </div>
+    <div class="section-note" style="margin-top:.75rem">Agent polls every interval. Bake fires only when live effective multiplier meets or exceeds this value and all other conditions pass.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Agent settings</div>
+    <div class="input-row">
+      <span class="input-label">Poll interval (seconds)</span>
+      <input type="number" id="cfg-interval" min="10" max="300" step="5" value="15">
+    </div>
+    <div class="input-row">
+      <span class="input-label">ETH safety floor</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input type="number" id="cfg-ethfloor" min="0" max="0.1" step="0.001" value="0.003">
+        <span style="color:var(--muted)">ETH</span>
+      </div>
+    </div>
+    <div class="input-row">
+      <span class="input-label">Gas limit override</span>
+      <input type="number" id="cfg-gas" min="50000" max="500000" step="10000" value="200000">
+    </div>
+    <div class="input-row">
+      <span class="input-label">Pause on rug detected</span>
+      <input type="checkbox" id="cfg-pause-rug" checked>
+    </div>
+    <div class="input-row">
+      <span class="input-label">Auto-restart after rug clears</span>
+      <input type="checkbox" id="cfg-auto-restart" checked>
+    </div>
+  </div>
+
+  <div class="card full">
+    <div class="card-title">
+      Conditions
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" id="btn-check">Check all</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px">
+      <div class="cond-row"><span>Wallet connected</span><span class="badge badge-dim" id="cond-wallet">—</span></div>
+      <div class="cond-row"><span>Season active (baking open)</span><span class="badge badge-dim" id="cond-season">—</span></div>
+      <div class="cond-row"><span>Player registered</span><span class="badge badge-dim" id="cond-reg">—</span></div>
+      <div class="cond-row"><span>In a bakery</span><span class="badge badge-dim" id="cond-bakery">—</span></div>
+      <div class="cond-row"><span>ETH ≥ floor</span><span class="badge badge-dim" id="cond-eth">—</span></div>
+      <div class="cond-row"><span>Multiplier ≥ target</span><span class="badge badge-dim" id="cond-mult">—</span></div>
+      <div class="cond-row"><span>No active rug (or paused)</span><span class="badge badge-dim" id="cond-rug">—</span></div>
+      <div class="cond-row"><span>VRF fee available</span><span class="badge badge-dim" id="cond-vrf">—</span></div>
+    </div>
+    <div class="rug-alert" id="rug-alert">
+      <span class="rug-alert-text">Active rug detected on your bakery. Agent paused. Use Cleanup Crew to clear it.</span>
+      <button class="btn btn-sm" id="btn-clear-rug">Mark cleared</button>
+    </div>
+  </div>
+
+  <div class="card full">
+    <div class="card-title">
+      Agent control
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="agent-dot" class="agent-dot"></span>
+        <span id="agent-status-text" style="font-size:11px;color:var(--muted)">Idle</span>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
+        <span id="agent-label">—</span>
+        <span id="agent-timer">—</span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" id="agent-bar" style="width:0%"></div></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-green" id="btn-start">Start agent</button>
+      <button class="btn btn-red" id="btn-stop" disabled>Stop</button>
+      <button class="btn btn-sm" id="btn-bake-once">Force bake now</button>
+      <button class="btn btn-sm" id="btn-sync">Sync state</button>
+    </div>
+  </div>
+
+  <div class="card full">
+    <div class="card-title">
+      Session stats
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">Bakes fired</div><div class="stat-value" id="st-bakes">0</div></div>
+      <div class="stat"><div class="stat-label">Skipped (mult)</div><div class="stat-value" id="st-skips">0</div><div class="stat-sub">below target</div></div>
+      <div class="stat"><div class="stat-label">Cookies earned</div><div class="stat-value" id="st-cookies">0</div></div>
+      <div class="stat"><div class="stat-label">Errors</div><div class="stat-value" id="st-errors">0</div></div>
+      <div class="stat"><div class="stat-label">Uptime</div><div class="stat-value" id="st-uptime">0m</div></div>
+    </div>
+  </div>
+
+  <div class="card full">
+    <div class="card-title">
+      Activity log
+      <button class="btn btn-sm" id="btn-clear-log">Clear</button>
+    </div>
+    <div class="log-wrap" id="log"></div>
+  </div>
+
+</div>
+
+<script>
+// ─── CONFIG — paste your addresses from /agent.json ────────────────────────
+const CONFIG = {
+  RPC_URL: 'https://api.mainnet.abs.xyz',
+  CHAIN_ID: 2741,
+  CHAIN_NAME: 'Abstract',
+
+  // Paste addresses from /agent.json or /.well-known/agent.json
+  SEASON_MANAGER:    '0x0000000000000000000000000000000000000000',
+  PLAYER_REGISTRY:   '0x0000000000000000000000000000000000000000',
+  COOKIE_TOKEN:      '0x0000000000000000000000000000000000000000',
+  BOOST_MANAGER:     '0x0000000000000000000000000000000000000000',
+  PLAYER_SKILLS:     '0x0000000000000000000000000000000000000000',
+  CLAN_REGISTRY:     '0x0000000000000000000000000000000000000000',
+
+  // Season ID (public Season 7 = DB season ID 9)
+  SEASON_ID: 9,
+
+  // COOKIE_SCALE from /agent.json
+  COOKIE_SCALE: 100,
+};
+
+// ─── ABIs (minimal — only what the agent needs) ────────────────────────────
+const ABI = {
+  SeasonManager: [
+    'function isSeasonActive(uint256 seasonId) view returns (bool)',
+    'function getSeasonTierConfig(uint256 seasonId, uint256 tierId) view returns (tuple(bool enabled, uint256 bakeInterval, uint256 memberCap))',
+  ],
+  PlayerRegistry: [
+    'function getPlayerSeason(address player, uint256 seasonId) view returns (tuple(uint256 clanId, uint256 cookiesBaked, uint256 spendableCookies, bool registered, address referrer))',
+    'function bake() external',
+  ],
+  BoostManager: [
+    'function getVrfFee() view returns (uint256)',
+    'function getActiveBoosts(uint256 clanId) view returns (tuple(uint256 boostTypeId, uint256 multiplierBps, uint256 endTime, bool isRandomEvent)[])',
+  ],
+  PlayerSkills: [
+    'function getPlayerSkill(address player, uint256 seasonId) view returns (uint8)',
+  ],
+  ClanRegistry: [
+    'function getPlayerClan(address player, uint256 seasonId) view returns (uint256 clanId, string name)',
+    'function getActiveDebuffs(uint256 clanId) view returns (tuple(uint256 rugTypeId, uint256 severity, uint256 endTime)[])',
+  ],
+  ERC20: [
+    'function balanceOf(address) view returns (uint256)',
+  ],
+};
+
+// ─── State ─────────────────────────────────────────────────────────────────
+const S = {
+  provider: null, signer: null, wallet: null,
+  contracts: {},
+  running: false, checkTimer: null, progressTimer: null, uptimeTimer: null,
+  nextCheck: null, startTime: null,
+  bakes: 0, skips: 0, cookies: 0, errors: 0,
+  liveMult: null, vrfFee: null,
+  clanId: null, rugDetected: false,
+  seasonActive: false, registered: false, inBakery: false,
+  ethBal: 0n,
+};
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+function ts() { return new Date().toLocaleTimeString(); }
+function fmt(n) { return Intl.NumberFormat().format(Math.round(Number(n))); }
+function fmtEth(wei) { return parseFloat(ethers.formatEther(wei)).toFixed(4); }
+
+function addLog(msg, cls = '') {
+  const el = $('log');
+  const d = document.createElement('div');
+  d.className = 'le' + (cls ? ' le-' + cls : '');
+  d.innerHTML = `<span class="le-ts">${ts()}</span><span class="le-msg">${msg}</span>`;
+  el.prepend(d);
+  while (el.children.length > 100) el.removeChild(el.lastChild);
+}
+
+function setBadge(id, text, cls) {
+  const b = $(id);
+  b.textContent = text;
+  b.className = 'badge badge-' + cls;
+}
+
+function setAgentState(state) {
+  const dot = $('agent-dot');
+  const txt = $('agent-status-text');
+  dot.className = 'agent-dot ' + (state === 'running' ? 'running' : state === 'paused' ? 'paused' : '');
+  txt.textContent = state === 'running' ? 'Running' : state === 'paused' ? 'Paused — rug' : 'Idle';
+}
+
+// ─── Contract init ─────────────────────────────────────────────────────────
+function initContracts(signerOrProvider) {
+  const p = signerOrProvider;
+  S.contracts.season   = new ethers.Contract(CONFIG.SEASON_MANAGER,  ABI.SeasonManager,  p);
+  S.contracts.registry = new ethers.Contract(CONFIG.PLAYER_REGISTRY, ABI.PlayerRegistry, p);
+  S.contracts.boost    = new ethers.Contract(CONFIG.BOOST_MANAGER,   ABI.BoostManager,   p);
+  S.contracts.skills   = new ethers.Contract(CONFIG.PLAYER_SKILLS,   ABI.PlayerSkills,   p);
+  S.contracts.clan     = new ethers.Contract(CONFIG.CLAN_REGISTRY,   ABI.ClanRegistry,   p);
+  S.contracts.cookie   = new ethers.Contract(CONFIG.COOKIE_TOKEN,    ABI.ERC20,           p);
+}
+
+// ─── Wallet connection ─────────────────────────────────────────────────────
+async function connectWallet() {
+  try {
+    if (!window.ethereum) {
+      addLog('No injected wallet found. Install Abstract Global Wallet extension.', 'err');
+      return;
+    }
+    addLog('Requesting wallet connection…');
+    const browserProvider = new ethers.BrowserProvider(window.ethereum);
+    const network = await browserProvider.getNetwork();
+    if (Number(network.chainId) !== CONFIG.CHAIN_ID) {
+      addLog('Wrong network. Requesting switch to Abstract (2741)…', 'warn');
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0xAB5' }],
+        });
+      } catch (e) {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0xAB5',
+            chainName: 'Abstract',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: [CONFIG.RPC_URL],
+            blockExplorerUrls: ['https://explorer.mainnet.abs.xyz'],
+          }],
+        });
+      }
+    }
+    const signer = await browserProvider.getSigner();
+    S.provider = browserProvider;
+    S.signer = signer;
+    S.wallet = await signer.getAddress();
+    initContracts(signer);
+    $('w-disconnected').style.display = 'none';
+    $('w-connected').style.display = 'block';
+    $('btn-disconnect').style.display = 'inline-flex';
+    $('btn-connect').style.display = 'none';
+    $('w-addr').textContent = S.wallet.slice(0,6) + '…' + S.wallet.slice(-4) + ' (' + S.wallet + ')';
+    setBadge('w-badge', 'Connected', 'ok');
+    addLog('Connected: ' + S.wallet.slice(0,6) + '…' + S.wallet.slice(-4), 'ok');
+    await syncState();
+  } catch (e) {
+    addLog('Connection error: ' + (e.message || e), 'err');
+  }
+}
+
+function disconnectWallet() {
+  if (S.running) stopAgent();
+  S.provider = null; S.signer = null; S.wallet = null; S.contracts = {};
+  S.liveMult = null; S.clanId = null;
+  $('w-disconnected').style.display = 'block';
+  $('w-connected').style.display = 'none';
+  $('btn-connect').style.display = 'inline-flex';
+  $('btn-disconnect').style.display = 'none';
+  setBadge('w-badge', 'Not connected', 'dim');
+  $('mult-display').textContent = '—';
+  $('mult-display').className = 'mult-big unknown';
+  $('mult-sources').textContent = 'Connect and refresh to load sources';
+  ['mb-perf','mb-boost','mb-oven','mb-event','mb-total'].forEach(id => $(id).textContent = '—');
+  ['cond-wallet','cond-season','cond-reg','cond-bakery','cond-eth','cond-mult','cond-rug','cond-vrf']
+    .forEach(id => setBadge(id, '—', 'dim'));
+  addLog('Wallet disconnected.');
+}
+
+// ─── Live state sync ───────────────────────────────────────────────────────
+async function syncState() {
+  if (!S.wallet) return;
+  addLog('Syncing on-chain state…');
+  try {
+    // ETH balance
+    S.ethBal = await S.provider.getBalance(S.wallet);
+    $('w-eth').textContent = fmtEth(S.ethBal) + ' ETH';
+
+    // Cookie balance
+    let cookieBal = 0n;
+    if (CONFIG.COOKIE_TOKEN !== '0x0000000000000000000000000000000000000000') {
+      cookieBal = await S.contracts.cookie.balanceOf(S.wallet);
+      $('w-cookies').textContent = fmt(ethers.formatUnits(cookieBal, 18));
+    } else {
+      $('w-cookies').textContent = 'Set COOKIE_TOKEN';
+    }
+
+    // Season active
+    if (CONFIG.SEASON_MANAGER !== '0x0000000000000000000000000000000000000000') {
+      S.seasonActive = await S.contracts.season.isSeasonActive(CONFIG.SEASON_ID);
+    } else {
+      S.seasonActive = false;
+    }
+
+    // Player season data
+    if (CONFIG.PLAYER_REGISTRY !== '0x0000000000000000000000000000000000000000') {
+      const pd = await S.contracts.registry.getPlayerSeason(S.wallet, CONFIG.SEASON_ID);
+      S.registered = pd.registered;
+      S.clanId = pd.clanId;
+      S.inBakery = pd.clanId > 0n;
+      $('w-score').textContent = fmt(ethers.formatUnits(pd.cookiesBaked, 18));
+    }
+
+    // Bakery name
+    if (S.inBakery && CONFIG.CLAN_REGISTRY !== '0x0000000000000000000000000000000000000000') {
+      try {
+        const c = await S.contracts.clan.getPlayerClan(S.wallet, CONFIG.SEASON_ID);
+        $('w-bakery').textContent = c.name || '#' + c.clanId.toString();
+      } catch { $('w-bakery').textContent = '#' + S.clanId.toString(); }
+    }
+
+    // VRF fee
+    if (CONFIG.BOOST_MANAGER !== '0x0000000000000000000000000000000000000000') {
+      S.vrfFee = await S.contracts.boost.getVrfFee();
+    }
+
+    // Multiplier
+    await fetchMultiplier();
+
+    // Rug check
+    if (S.inBakery && CONFIG.CLAN_REGISTRY !== '0x0000000000000000000000000000000000000000') {
+      try {
+        const rugs = await S.contracts.clan.getActiveDebuffs(S.clanId);
+        const now = BigInt(Math.floor(Date.now()/1000));
+        S.rugDetected = rugs.some(r => r.endTime > now);
+        if (S.rugDetected) {
+          $('rug-alert').classList.add('show');
+          addLog('Active rug detected on your bakery!', 'warn');
+        } else {
+          $('rug-alert').classList.remove('show');
+        }
+      } catch {}
+    }
+
+    updateConditions();
+    addLog('State synced.', 'ok');
+  } catch (e) {
+    addLog('Sync error: ' + (e.message || e), 'err');
+    S.errors++;
+    $('st-errors').textContent = S.errors;
+  }
+}
+
+// ─── Multiplier calculation ────────────────────────────────────────────────
+async function fetchMultiplier() {
+  if (!S.wallet) return;
+  let perf = 0, boost = 0, oven = 0, event_ = 0;
+  const sources = [];
+
+  // Perfectionist skill = skill ID 5
+  if (CONFIG.PLAYER_SKILLS !== '0x0000000000000000000000000000000000000000') {
+    try {
+      const skill = await S.contracts.skills.getPlayerSkill(S.wallet, CONFIG.SEASON_ID);
+      if (Number(skill) === 5) { perf = 0.04; sources.push('Perfectionist +4%'); }
+    } catch {}
+  }
+
+  // Active boosts
+  if (S.inBakery && CONFIG.BOOST_MANAGER !== '0x0000000000000000000000000000000000000000' && S.clanId) {
+    try {
+      const boosts = await S.contracts.boost.getActiveBoosts(S.clanId);
+      const now = BigInt(Math.floor(Date.now()/1000));
+      for (const b of boosts) {
+        if (b.endTime <= now) continue;
+        const pct = Number(b.multiplierBps) / 10000;
+        if (b.isRandomEvent) {
+          event_ += pct;
+          sources.push('Event +' + Math.round(pct*100) + '%');
+        } else {
+          boost += pct;
+          sources.push('Boost +' + Math.round(pct*100) + '%');
+        }
+      }
+    } catch {}
+  }
+
+  // Oven active upgrade adds 0.04 if active — check via boost type or state
+  // (expand this when you know the upgrade state contract method)
+  // oven = 0.04 if oven active upgrade is unlocked
+
+  const eff = 1 + perf + boost + oven + event_;
+  S.liveMult = eff;
+
+  const target = parseFloat($('target-mult').value) || 1.00;
+  const met = eff >= target;
+
+  $('mult-display').textContent = eff.toFixed(4) + '×';
+  $('mult-display').className = 'mult-big ' + (met ? 'met' : 'unmet');
+  $('mult-sources').textContent = sources.length ? sources.join(' · ') : 'Base only';
+
+  $('mb-perf').textContent = (perf > 0 ? '+' : '') + perf.toFixed(4) + '×';
+  $('mb-perf').style.color = perf > 0 ? 'var(--green)' : 'var(--muted)';
+  $('mb-boost').textContent = (boost > 0 ? '+' : '') + boost.toFixed(4) + '×';
+  $('mb-boost').style.color = boost > 0 ? 'var(--green)' : 'var(--muted)';
+  $('mb-oven').textContent = (oven > 0 ? '+' : '') + oven.toFixed(4) + '×';
+  $('mb-oven').style.color = oven > 0 ? 'var(--green)' : 'var(--muted)';
+  $('mb-event').textContent = (event_ > 0 ? '+' : '') + event_.toFixed(4) + '×';
+  $('mb-event').style.color = event_ > 0 ? 'var(--green)' : 'var(--muted)';
+  $('mb-total').textContent = eff.toFixed(4) + '×';
+}
+
+// ─── Conditions check ──────────────────────────────────────────────────────
+function updateConditions() {
+  const target = parseFloat($('target-mult').value) || 1.00;
+  const ethFloor = parseFloat($('cfg-ethfloor').value) || 0;
+  const eff = S.liveMult || 1.00;
+  const ethBal = parseFloat(ethers.formatEther(S.ethBal || 0n));
+  const multMet = eff >= target;
+  const ethOk = ethBal >= ethFloor;
+  const vrfOk = S.vrfFee !== null && S.ethBal > (S.vrfFee || 0n);
+
+  setBadge('cond-wallet',  S.wallet ? 'OK' : 'NO',     S.wallet ? 'ok' : 'err');
+  setBadge('cond-season',  S.seasonActive ? 'OK' : 'NO', S.seasonActive ? 'ok' : 'err');
+  setBadge('cond-reg',     S.registered ? 'OK' : 'NO',  S.registered ? 'ok' : 'err');
+  setBadge('cond-bakery',  S.inBakery ? 'OK' : 'NO',    S.inBakery ? 'ok' : 'err');
+  setBadge('cond-eth',     ethOk ? 'OK' : 'LOW',        ethOk ? 'ok' : 'err');
+  setBadge('cond-mult',    multMet ? (eff.toFixed(2)+'× ≥ '+target.toFixed(2)+'×') : (eff.toFixed(2)+'× < '+target.toFixed(2)+'×'), multMet ? 'ok' : 'amber');
+  setBadge('cond-rug',     S.rugDetected ? 'RUG ACTIVE' : 'OK', S.rugDetected ? 'err' : 'ok');
+  setBadge('cond-vrf',     vrfOk ? 'OK' : 'LOW',        vrfOk ? 'ok' : 'err');
+}
+
+function allMet() {
+  if (!S.wallet || !S.seasonActive || !S.registered || !S.inBakery) return false;
+  if ($('cfg-pause-rug').checked && S.rugDetected) return false;
+  const target = parseFloat($('target-mult').value) || 1.00;
+  const eff = S.liveMult || 1.00;
+  if (eff < target) return false;
+  const ethFloor = parseFloat($('cfg-ethfloor').value) || 0;
+  const ethBal = parseFloat(ethers.formatEther(S.ethBal || 0n));
+  if (ethBal < ethFloor) return false;
+  if (!S.vrfFee || S.ethBal <= S.vrfFee) return false;
+  return true;
+}
+
+// ─── Bake ──────────────────────────────────────────────────────────────────
+async function executeBake(forced) {
+  if (!S.wallet) { addLog('No wallet.', 'err'); return; }
+  const eff = S.liveMult || 1.00;
+  const target = parseFloat($('target-mult').value) || 1.00;
+
+  if (!forced && eff < target) {
+    S.skips++;
+    $('st-skips').textContent = fmt(S.skips);
+    addLog('Skip — live ' + eff.toFixed(4) + '× < target ' + target.toFixed(2) + '×', 'skip');
+    return;
+  }
+
+  addLog('Sending bake() transaction…');
+  try {
+    // Re-read VRF fee right before sending
+    let fee = S.vrfFee || 0n;
+    if (CONFIG.BOOST_MANAGER !== '0x0000000000000000000000000000000000000000') {
+      fee = await S.contracts.boost.getVrfFee();
+      S.vrfFee = fee;
+    }
+
+    const gasLimit = parseInt($('cfg-gas').value) || 200000;
+
+    // bake() on PlayerRegistry — some implementations require msg.value = VRF fee
+    // Adjust value: send 0n if your bake() doesn't require VRF fee
+    const tx = await S.contracts.registry.bake({
+      value: fee,
+      gasLimit,
+    });
+
+    addLog('Tx sent: ' + tx.hash, 'ok');
+    const receipt = await tx.wait();
+
+    if (receipt.status === 1) {
+      const minted = Math.round(CONFIG.COOKIE_SCALE * eff);
+      S.bakes++;
+      S.cookies += minted;
+      $('st-bakes').textContent = fmt(S.bakes);
+      $('st-cookies').textContent = fmt(S.cookies);
+      addLog(
+        'Bake #' + S.bakes + ' confirmed — +~' + fmt(minted) + ' cookies @ ' + eff.toFixed(4) + '× ' +
+        '| <a class="tx-link" href="https://explorer.mainnet.abs.xyz/tx/' + tx.hash + '" target="_blank">view tx</a>',
+        'ok'
+      );
+      // Update balances
+      S.ethBal = await S.provider.getBalance(S.wallet);
+      $('w-eth').textContent = fmtEth(S.ethBal) + ' ETH';
+    } else {
+      throw new Error('Transaction reverted');
+    }
+  } catch (e) {
+    S.errors++;
+    $('st-errors').textContent = S.errors;
+    const msg = e?.reason || e?.data?.message || e?.message || String(e);
+    addLog('Bake error: ' + msg, 'err');
+  }
+}
+
+// ─── Poll cycle ────────────────────────────────────────────────────────────
+async function pollCycle() {
+  if (!S.running) return;
+  await fetchMultiplier();
+  // Re-check rug
+  if (S.inBakery && CONFIG.CLAN_REGISTRY !== '0x0000000000000000000000000000000000000000' && S.clanId) {
+    try {
+      const rugs = await S.contracts.clan.getActiveDebuffs(S.clanId);
+      const now = BigInt(Math.floor(Date.now()/1000));
+      const prev = S.rugDetected;
+      S.rugDetected = rugs.some(r => r.endTime > now);
+      if (!prev && S.rugDetected) addLog('Rug just landed on your bakery — pausing.', 'warn');
+      if (prev && !S.rugDetected) {
+        addLog('Rug cleared.', 'ok');
+        $('rug-alert').classList.remove('show');
+        if ($('cfg-auto-restart').checked && S.running) setAgentState('running');
+      }
+      S.rugDetected ? $('rug-alert').classList.add('show') : $('rug-alert').classList.remove('show');
+    } catch {}
+  }
+  updateConditions();
+  if (allMet()) {
+    await executeBake(false);
+  } else {
+    const eff = S.liveMult || 1.00;
+    const target = parseFloat($('target-mult').value) || 1.00;
+    if (eff < target) {
+      S.skips++;
+      $('st-skips').textContent = fmt(S.skips);
+      $('agent-label').textContent = 'Waiting — live ' + eff.toFixed(4) + '× < target ' + target.toFixed(2) + '×';
+    } else if (S.rugDetected && $('cfg-pause-rug').checked) {
+      $('agent-label').textContent = 'Paused — rug active';
+      setAgentState('paused');
+    } else {
+      $('agent-label').textContent = 'Conditions not met — waiting';
+    }
+  }
+}
+
+function startAgent() {
+  if (!S.wallet) { addLog('Connect wallet first.', 'err'); return; }
+  const interval = Math.max(10, parseInt($('cfg-interval').value) || 15) * 1000;
+  S.running = true;
+  S.startTime = Date.now();
+  $('btn-start').disabled = true;
+  $('btn-stop').disabled = false;
+  setAgentState('running');
+  addLog('Agent started — polling every ' + (interval/1000) + 's | target ' + parseFloat($('target-mult').value).toFixed(2) + '×', 'ok');
+  pollCycle();
+  S.checkTimer = setInterval(pollCycle, interval);
+  S.nextCheck = Date.now() + interval;
+  S.progressTimer = setInterval(() => {
+    if (!S.running || !S.nextCheck) return;
+    const rem = S.nextCheck - Date.now();
+    const total = Math.max(10, parseInt($('cfg-interval').value) || 15) * 1000;
+    $('agent-bar').style.width = Math.max(0, Math.min(100, 100 - rem/total*100)).toFixed(1) + '%';
+    $('agent-timer').textContent = 'Next check in ' + Math.max(0, Math.ceil(rem/1000)) + 's';
+    S.nextCheck = S.checkTimer ? S.nextCheck : null;
+  }, 400);
+  S.uptimeTimer = setInterval(() => {
+    if (!S.startTime) return;
+    const m = Math.floor((Date.now()-S.startTime)/60000);
+    $('st-uptime').textContent = m < 60 ? m+'m' : Math.floor(m/60)+'h '+m%60+'m';
+  }, 15000);
+}
+
+function stopAgent() {
+  S.running = false;
+  clearInterval(S.checkTimer);
+  clearInterval(S.progressTimer);
+  clearInterval(S.uptimeTimer);
+  S.checkTimer = null;
+  $('btn-start').disabled = false;
+  $('btn-stop').disabled = true;
+  $('agent-bar').style.width = '0%';
+  $('agent-timer').textContent = '—';
+  $('agent-label').textContent = '—';
+  setAgentState('idle');
+  addLog('Agent stopped.');
+}
+
+// ─── Event listeners ───────────────────────────────────────────────────────
+$('btn-connect').addEventListener('click', connectWallet);
+$('btn-connect2').addEventListener('click', connectWallet);
+$('btn-disconnect').addEventListener('click', disconnectWallet);
+$('btn-refresh').addEventListener('click', () => { if(S.wallet) fetchMultiplier().then(updateConditions); });
+$('btn-check').addEventListener('click', () => { if(S.wallet) syncState(); else addLog('Connect wallet first.','warn'); });
+$('btn-sync').addEventListener('click', () => { if(S.wallet) syncState(); else addLog('Connect wallet first.','warn'); });
+$('btn-start').addEventListener('click', startAgent);
+$('btn-stop').addEventListener('click', stopAgent);
+$('btn-bake-once').addEventListener('click', () => {
+  if (!S.wallet) { addLog('Connect wallet first.','err'); return; }
+  executeBake(true);
+});
+$('btn-clear-log').addEventListener('click', () => {
+  $('log').innerHTML = '<div class="le"><span class="le-ts">'+ts()+'</span><span class="le-msg" style="color:var(--dim)">Log cleared.</span></div>';
+});
+$('btn-clear-rug').addEventListener('click', () => {
+  S.rugDetected = false;
+  $('rug-alert').classList.remove('show');
+  updateConditions();
+  addLog('Rug manually marked cleared. Agent will resume on next poll.', 'ok');
+});
+
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', function() {
+    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+    $('target-mult').value = parseFloat(this.dataset.v).toFixed(2);
+    updateConditions();
+  });
+});
+
+$('target-mult').addEventListener('input', () => {
+  document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+  updateConditions();
+});
+
+// Handle account change
+if (window.ethereum) {
+  window.ethereum.on('accountsChanged', accounts => {
+    if (accounts.length === 0) disconnectWallet();
+    else { addLog('Account changed — reconnecting…','warn'); disconnectWallet(); connectWallet(); }
+  });
+  window.ethereum.on('chainChanged', () => {
+    addLog('Network changed — please reconnect.','warn');
+    disconnectWallet();
+  });
+}
+</script>
+</body>
+</html>
